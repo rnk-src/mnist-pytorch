@@ -6,6 +6,7 @@ import torch.utils.data as data
 from torchvision import datasets, transforms
 from datetime import datetime
 
+model_load = True
 seed = 100
 torch.manual_seed(seed)
 
@@ -15,7 +16,7 @@ mnist_train = data.DataLoader(dataset=mnist_train, batch_size=64, shuffle=True, 
 
 mnist_test = datasets.MNIST(root="./data", train=False, download=True, transform=transforms.Compose(
     [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3801,))]))
-mnist_test = data.DataLoader(dataset=mnist_test, batch_size=32, shuffle=True, num_workers=0)
+mnist_test = data.DataLoader(dataset=mnist_test, batch_size=64, shuffle=True, num_workers=0)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 learning_rate = 1e-3
@@ -52,31 +53,45 @@ class MNISTNet(nn.Module):
         return x
 
 
-def make_run_folder():
+def get_current_time():
     now = datetime.now()
     now = now.strftime("%b-%d-%Y %H:%M:%S")
-    os.mkdir("runs/run " + now)
+    return now
 
 
-make_run_folder()
+filename = "run " + get_current_time()
+run_directory = "runs/" + filename
+os.mkdir(run_directory)
 
 
-def save_checkpoint(state):
-    pass
+def save_checkpoint(state, directory=run_directory):
+    torch.save(state, directory + "/checkpoint " + get_current_time() + ".pt")
+    print("saved checkpoint")
 
 
 model = MNISTNet().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
+
+
+def load_model(path):
+    load_dict = torch.load(path)
+    model.load_state_dict(load_dict['model_state_dict'])
+    optimizer.load_state_dict(load_dict['optimizer_state_dict'])
+    scheduler.load_state_dict(load_dict['scheduler_state_dict'])
+
+
+if model_load:
+    load_model("runs/run Jul-04-2023 21:13:39/checkpoint Jul-04-2023 21:57:59.pt")
+    model.train()
+
 train_loss_array = []
 test_loss_array = []
 epoch_array = []
 total_loss = 0
 
 for epoch in range(epochs):
-
-    checkpoint = {'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}
-    save_checkpoint(checkpoint)
 
     for inputs, labels in mnist_train:
         optimizer.zero_grad()
@@ -105,3 +120,9 @@ for epoch in range(epochs):
     test_loss_array.append(total_loss)
     total_loss = 0
     epoch_array.append(epoch)
+
+    scheduler.step()
+
+    checkpoint = {'model_state_dict': model.state_dict(), 'optimizer_state_dict': optimizer.state_dict(),
+                  'scheduler_state_dict': scheduler.state_dict()}
+    save_checkpoint(checkpoint)
