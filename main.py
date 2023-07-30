@@ -171,5 +171,6 @@ ax2.legend()
 ax2.set_title('Accuracy by Epoch')
 ax2.set_xlabel('Epochs')
 ax2.set_ylabel('Accuracy')
+ax2.ylim(0, 1)
 
 plt.show()
