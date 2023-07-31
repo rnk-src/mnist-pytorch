@@ -98,7 +98,7 @@ def load_model(path):
 
 
 if model_load:
-    load_model("runs/run Jul-04-2023 23:27:12/checkpoint Jul-05-2023 01:19:35.pt")
+    load_model("")  # insert .pt file directory here
     model.train()
 
 train_loss_array = []
@@ -119,7 +119,7 @@ for epoch in range(epochs):
         total_loss += loss.item()
         loss.backward()
         optimizer.step()
-    train_accuracy_array.append(sum(temp_accuracy_array)/len(temp_accuracy_array))
+    train_accuracy_array.append(sum(temp_accuracy_array) / len(temp_accuracy_array))
     temp_accuracy_array = []
 
     print("Total Train loss on epoch " + str(epoch) + ": " + str(total_loss))
@@ -133,7 +133,7 @@ for epoch in range(epochs):
             temp_accuracy_array.append(get_accuracy(output, labels))
             loss = criterion(output, labels)
             total_loss += loss.item()
-    validation_accuracy_array.append(sum(temp_accuracy_array)/len(temp_accuracy_array))
+    validation_accuracy_array.append(sum(temp_accuracy_array) / len(temp_accuracy_array))
 
     print("Total validation loss on epoch " + str(epoch) + ": " + str(total_loss))
     validation_loss_array.append(total_loss)
